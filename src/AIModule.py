@@ -83,25 +83,24 @@ def AI(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict):
                 '''
             }]
         }
-
-        final_api_start = time.time()
-        print("🛰️  최종 분석 요청 전송")
-        final_response = requests.post(
-            api_url,
-            headers=headers,
-            json=final_payload
-        )
-        final_api_duration = time.time() - final_api_start
-        print(f"⏱️ 최종 API 응답 시간: {format_duration(final_api_duration)}")
-        print("📨 최종 응답 수신 완료")
-
-        response_data = final_response.json()
-        raw_content = response_data['choices'][0]['message']['content']
-        print("🟢 최종 응답 content:")
-        result = extract_json_array(raw_content)
-        total_duration = time.time() - total_start
-        print(f"\n✅ 총 소요 시간: {format_duration(total_duration)}")
-        return json.dumps(result, indent=2, ensure_ascii=False)
+        # final_api_start = time.time()
+        # print("🛰️  최종 분석 요청 전송")
+        # final_response = requests.post(
+        #     api_url,
+        #     headers=headers,
+        #     json=final_payload
+        # )
+        # final_api_duration = time.time() - final_api_start
+        # print(f"⏱️ 최종 API 응답 시간: {format_duration(final_api_duration)}")
+        # print("📨 최종 응답 수신 완료")
+        #
+        # response_data = final_response.json()
+        # raw_content = response_data['choices'][0]['message']['content']
+        # print("🟢 최종 응답 content:")
+        # result = extract_json_array(raw_content)
+        # total_duration = time.time() - total_start
+        # print(f"\n✅ 총 소요 시간: {format_duration(total_duration)}")
+        return json.dumps(mbti_template, indent=2, ensure_ascii=False)
     except Exception as e:
         total_duration = time.time() - total_start
         print(f"\n🚨 에러 발생 시 경과 시간: {format_duration(total_duration)}")
