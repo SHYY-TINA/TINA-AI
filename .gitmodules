@@ -1,3 +1,0 @@
-[submodule "models/data_generater/Model"]
-	path = models/data_generater/Model
-	url = https://github.com/ggml-org/llama.cpp.git
