@@ -100,7 +100,7 @@ def AI(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict):
         result = extract_json_array(raw_content)
         total_duration = time.time() - total_start
         print(f"\n✅ 총 소요 시간: {format_duration(total_duration)}")
-        return json.dumps(mbti_template, indent=2, ensure_ascii=False)
+        return json.dumps(result, indent=2, ensure_ascii=False)
     except Exception as e:
         total_duration = time.time() - total_start
         print(f"\n🚨 에러 발생 시 경과 시간: {format_duration(total_duration)}")
