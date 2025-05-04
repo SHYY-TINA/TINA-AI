@@ -3,6 +3,9 @@ import requests
 import json
 import time
 import os
+from queue import Queue
+from threading import Thread, Event
+from concurrent.futures import Future
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,13 +18,16 @@ headers = {
     'Authorization': f'Bearer {OPEN_WEB_UI_TOKEN}'
 }
 
+request_queue = Queue()
+processing_event = Event()
+processing_event.set()  # 초기 상태: 처리 가능
+
 
 def extract_json_array(text):
     pattern = re.compile(
-        r"```json\s*(\[\s*\{(?:.|\n)*?\}\s*\])\s*```",
+        r"``````",
         re.DOTALL
     )
-
     match = pattern.search(text)
     if match:
         return json.loads(match.group(1))
@@ -38,14 +44,7 @@ def format_duration(seconds: float) -> str:
     return f"{seconds:.2f}초"
 
 
-def format_duration(seconds: float) -> str:
-    if seconds >= 60:
-        mins = int(seconds // 60)
-        secs = seconds % 60
-        return f"{mins}분 {secs:.2f}초"
-    return f"{seconds:.2f}초"
-
-def AI(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict):
+def AI_sync(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict):
     total_start = time.time()
     print("📤 채팅 데이터 기반 분석 시작")
 
@@ -80,6 +79,7 @@ def AI(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict):
                 중요: JSON 키값에는 영어, 벨류값에는 영어로만 작성해야해
                 채팅은 둘 다 있어야 하고 무조건 3개 이상 이어야해
                 이 형식을 무조건 지켜서 JSON 형식으로 알려줘
+                무조건 설명은 한국어로 할것
                 '''
             }]
         }
@@ -106,3 +106,34 @@ def AI(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict):
         print(f"\n🚨 에러 발생 시 경과 시간: {format_duration(total_duration)}")
         print(f"🚨 분석 오류: {str(e)}")
         raise
+
+
+def request_worker():
+    """요청을 순차적으로 처리하는 워커 스레드"""
+    while True:
+        if not request_queue.empty() and processing_event.is_set():
+            processing_event.clear()
+            future, args = request_queue.get()
+            try:
+                result = AI_sync(*args)
+                future.set_result(result)
+            except Exception as e:
+                future.set_exception(e)
+            finally:
+                processing_event.set()
+                request_queue.task_done()
+        time.sleep(0.1)
+
+
+Thread(target=request_worker, daemon=True).start()
+
+
+def AI_async(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict):
+    """비동기 요청 등록 함수, Future 반환"""
+    future = Future()
+    request_queue.put((future, (userNickname, userMBTI, partnerName, partnerMBTI, chat_dict)))
+    return future
+
+
+def AI(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict):
+    return AI_async(userNickname, userMBTI, partnerName, partnerMBTI, chat_dict).result()
